@@ -1,0 +1,24 @@
+domain - логика предметной области
+    AF_INET - IP, 
+    AF_INET6 - IP version 6 , 
+    AF_UNIX - local channel
+    AF_ISO - ISO protocols
+    AF_NS - Xerox Network Systems protocols
+
+server(type) - тип соединения
+    SOCK_STREAM - virtual circuit service
+    SOCK_DGRAM - datagram service 
+    SOCK_RAW - direct IP service
+
+protocol - сетевой протокол, для сокета 
+    0 - for now 
+    
+port -  номер порта, к которому привязывается соке
+    8080 - for simple http servers
+    0 - for automatic assigning 
+    (you can choose own port, but im not sure)
+ 
+interface(address) - с какого IP-адреса принимать соединения или отправлять данные
+    INADDR_ANY - any IP is good IP 0.0.0.0
+
+inet_ntop - internet Network TO Presentation
