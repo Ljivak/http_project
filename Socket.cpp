@@ -25,7 +25,7 @@ void Socket::start_listening(int backlog){
     test_connection(listening);
 }
 
-void Socket::accept_connection() {
+int Socket::accept_connection() {
     socklen_t client_len = sizeof(address);
     int client_socket = accept(sock, (struct sockaddr *)&address, &client_len);
     test_connection(client_socket);
@@ -46,6 +46,8 @@ void Socket::accept_connection() {
     send(client_socket, response, strlen(response), 0);  // отправляем клиенту
 
     close(client_socket);
+    
+    return client_socket;
 }
 
  

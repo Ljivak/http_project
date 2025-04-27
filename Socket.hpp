@@ -25,7 +25,7 @@ public:
     Socket(int domain, int server, int protocol, int port, unsigned int address);
     int establish_connection();
     void start_listening(int backlog); // maximum queue
-    void accept_connection();
+    int accept_connection();
 
 
     void test_connection(int connection);

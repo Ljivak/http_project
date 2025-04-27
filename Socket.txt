@@ -22,3 +22,6 @@ interface(address) - с какого IP-адреса принимать соед
     INADDR_ANY - any IP is good IP 0.0.0.0
 
 inet_ntop - internet Network TO Presentation
+
+
+dodałem HTTPServer z
