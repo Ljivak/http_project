@@ -28,7 +28,7 @@ public:
     int accept_connection();
 
 
-    void test_connection(int connection);
+    void test_connection(int connection) const;
 };
 
 

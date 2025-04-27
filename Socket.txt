@@ -25,3 +25,34 @@ inet_ntop - internet Network TO Presentation
 
 
 dodałem HTTPServer z
+
+1 Создаём объект HTTPServer server(8080)
+    внутри создаётся Socket server_socket(AF_INET, SOCK_STREAM, 0, 8080, INADDR_ANY)
+    вызывается socket(domain, server, protocol); interfсe?
+    HTTPServer в конструкторе вызывает server_socket.establish_connection()
+        bind(sock, address, size)
+2 server.addStaticRoute("/", "index.html")
+    вызывает addRoute("GET", "/", handler)
+        ставить заголовок Content-Type: text/html,
+        читать файл index.html в строку (loadFile),
+        возвращать HTTPResponse с этим телом и заголовками
+3 запускаем server.listen():
+    создается backlog и вызывается start_listening()
+        вызывается библиотечный listen()
+    accept_connection() ждем подключение
+        inet_ntop(...) выводит “connection: IP = ..., port = ...”
+    parse(client_fd) парсит
+        читает байты из сокета (recv) до разделителя "\r\n\r\n"
+        – разбирает первую строку: метод (GET), путь (/) → кладёт в req.method, req.path
+        – считывает все заголовки в req.headers (map строк→строка)
+        – возвращает готовую структуру с полями method, path, headers
+    Сервер ищет в routes ключ {req.method, req.path}
+    Лямбда читает файл
+        res.body = HTTPServer::loadFile("index.html");
+        loadFile читает файл
+        res.headers["Content-Type"] = "text/html";
+    resp.serialize() собирает файл в нужном виде
+    send(client_fd, ..., 0) шлёт эти байты клиенту
+    close(client_fd) закрывает соединение
+
+

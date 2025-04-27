@@ -2,6 +2,8 @@
 #include <string>
 #include <map>
 #include <functional>
+#include <iterator>
+#include <fstream>
 #include "Socket.hpp"
 
 
@@ -32,9 +34,12 @@ class HTTPServer {
     
         HTTPServer(int port, unsigned int interface = INADDR_ANY);
     
-        void addRoute(const std::string& method,
-                      const std::string& path,
-                      Handler handler);
+        void addRoute(const std::string& method, const std::string& path, Handler handler);
+                  
+        void addStaticRoute(const std::string& uri, const std::string& filePath, const std::string& contentType = "text/html");
+
+        static std::string loadFile(const std::string& path);
+                    
     
         void listen(int backlog = 5);
     

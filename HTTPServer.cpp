@@ -1,17 +1,18 @@
 #include "HTTPServer.hpp"
 #include <sstream>
 #include <iostream>
+#include <iterator>
 
 HTTPRequest HTTPRequest::parse(int client_fd) {
 
     HTTPRequest req;
     std::string line;
-    char buf[1024];
     std::stringstream ss;
 
     // Считать до разделителя заголовков "\r\n\r\n"
     size_t total = 0;
     while (true) {
+        char buf[1024];
         int n = recv(client_fd, buf, sizeof(buf), 0);
         if (n <= 0) break;
         ss.write(buf, n);
@@ -27,7 +28,7 @@ HTTPRequest HTTPRequest::parse(int client_fd) {
 
     // Заголовки
     while (std::getline(stream, line) && line != "\r") {
-        auto pos = line.find(":");
+        auto pos = line.find(':');
         if (pos != std::string::npos) {
             std::string name = line.substr(0,pos);
             std::string value = line.substr(pos+1);
@@ -55,7 +56,7 @@ std::string HTTPResponse::serialize() const {
 }
 
 // Конструктор HTTPServer
-HTTPServer::HTTPServer(int port, unsigned int interface)
+HTTPServer::HTTPServer(const int port, unsigned int interface)
     : server_socket(AF_INET, SOCK_STREAM, 0, port, interface)
 {
     server_socket.establish_connection();
@@ -65,6 +66,7 @@ HTTPServer::HTTPServer(int port, unsigned int interface)
 void HTTPServer::addRoute(const std::string& method, const std::string& path, Handler handler) {
     routes[{method,path}] = std::move(handler);
 }
+
 
 // listen
 void HTTPServer::listen(int backlog) {
@@ -97,4 +99,18 @@ void HTTPServer::listen(int backlog) {
         send(client_fd, out.c_str(), out.size(), 0);
         close(client_fd);
     }
+}
+
+std::string HTTPServer::loadFile(const std::string& path) {
+    std::ifstream in(path, std::ios::binary);
+    return std::string((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
+}
+
+void HTTPServer::addStaticRoute(const std::string& uri, const std::string& filePath, const std::string& contentType) {
+    addRoute("GET", uri, [filePath, contentType](const HTTPRequest&){
+        HTTPResponse res;
+        res.headers["Content-Type"] = contentType;
+        res.body = loadFile(filePath);
+        return res;
+    });
 }
