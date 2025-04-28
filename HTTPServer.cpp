@@ -13,7 +13,7 @@ HTTPRequest HTTPRequest::parse(int client_fd) {
     size_t total = 0;
     while (true) {
         char buf[1024];
-        int n = recv(client_fd, buf, sizeof(buf), 0);
+        int n = recv(client_fd, buf, sizeof(buf), 0); //длина запроса
         if (n <= 0) break;
         ss.write(buf, n);
         total += n;
@@ -44,11 +44,11 @@ HTTPRequest HTTPRequest::parse(int client_fd) {
 // HTTPResponse::serialize
 std::string HTTPResponse::serialize() const {
     std::ostringstream out;
-    out << "HTTP/1.1 " << status_code << " " << status_text << "\r\n";
-    for (auto& [k,v] : headers) {
+    out << "HTTP/1.1 " << this->status_code << " " << this->status_text << "\r\n";
+    for (auto& [k,v] : this->headers) {
         out << k << ": " << v << "\r\n";
     }
-    out << "Content-Length: " << body.size() << "\r\n";
+    out << "Content-Length: " << this->body.size() << "\r\n";
     out << "Connection: close\r\n";
     out << "\r\n";
     out << body;
@@ -62,12 +62,6 @@ HTTPServer::HTTPServer(const int port, unsigned int interface)
     server_socket.establish_connection();
 }
 
-// addRoute
-void HTTPServer::addRoute(const std::string& method, const std::string& path, Handler handler) {
-    routes[{method,path}] = std::move(handler);
-}
-
-
 // listen
 void HTTPServer::listen(int backlog) {
     server_socket.start_listening(backlog);
@@ -75,27 +69,30 @@ void HTTPServer::listen(int backlog) {
 
     while (true) {
 
+        // client_fd := client file descriptor (какой канал/сокет)
         int client_fd = server_socket.accept_connection();
         // Парсинг запроса
-        HTTPRequest req = HTTPRequest::parse(client_fd);
+        HTTPRequest request = HTTPRequest::parse(client_fd);
 
         // Поиск обработчика
-        Handler h = nullptr;
-        auto it = routes.find({req.method, req.path});
-        if (it != routes.end()) h = it->second;
+        Handler handler = nullptr;
+        auto check_handler = routes.find({request.method, request.path});
+        if (check_handler != routes.end()) {
+            handler = check_handler->second;
+        }
 
-        HTTPResponse resp;
-        if (h) {
-            resp = h(req);
+        HTTPResponse responce;
+        if (handler) {
+            responce = handler(request);
         } else {
-            resp.status_code = 404;
-            resp.status_text = "Not Found";
-            resp.body = "404 Not Found";
-            resp.headers["Content-Type"] = "text/plain";
+            responce.status_code = 404;
+            responce.status_text = "Not Found";
+            responce.body = "404 Not Found";
+            responce.headers["Content-Type"] = "text/plain";
         }
 
         // Отправка ответа
-        std::string out = resp.serialize();
+        std::string out = responce.serialize();
         send(client_fd, out.c_str(), out.size(), 0);
         close(client_fd);
     }
@@ -106,11 +103,18 @@ std::string HTTPServer::loadFile(const std::string& path) {
     return std::string((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
 }
 
+// addRoute
+void HTTPServer::addRoute(const std::string& method, const std::string& path, Handler handler) {
+    routes[{method,path}] = std::move(handler);
+}
+
+
 void HTTPServer::addStaticRoute(const std::string& uri, const std::string& filePath, const std::string& contentType) {
-    addRoute("GET", uri, [filePath, contentType](const HTTPRequest&){
-        HTTPResponse res;
-        res.headers["Content-Type"] = contentType;
-        res.body = loadFile(filePath);
-        return res;
-    });
+    addRoute("GET", uri,
+        /*lambda handler:*/ [filePath, contentType](const HTTPRequest&){
+            HTTPResponse res;
+            res.headers["Content-Type"] = contentType;
+            res.body = loadFile(filePath);
+            return res;
+        });
 }
