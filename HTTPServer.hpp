@@ -38,9 +38,18 @@ class HTTPServer {
                   
         void addStaticRoute(const std::string& uri, const std::string& filePath, const std::string& contentType = "text/html");
 
+        void addPostRoute (const std::string& path, Handler h);
+
+        void addStaticPostRoute();
+
+        void addPullRoute (const std::string& path, Handler h);
+
+        void addStaticPullRoute();
+
         static std::string loadFile(const std::string& path);
-                    
-    
+
+        void printResponce(const std::string &out) const;
+
         void listen(int backlog = 5);
     
     private:

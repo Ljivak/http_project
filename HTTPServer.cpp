@@ -38,6 +38,29 @@ HTTPRequest HTTPRequest::parse(int client_fd) {
             req.headers[name] = value;
         }
     }
+    auto itLen = req.headers.find("Content-Length");
+    if (itLen != req.headers.end()) {
+        size_t want = std::stoul(itLen->second);
+        std::string bodyBuf(want, '\0');
+        size_t have = 0;
+
+        std::string rest = ss.str();
+        size_t hdrEnd = rest.find("\r\n\r\n") + 4;
+        if (rest.size() > hdrEnd) {
+            size_t copy = std::min(want, rest.size() - hdrEnd);
+            bodyBuf.replace(0, copy, rest.substr(hdrEnd, copy));
+            have = copy;
+        }
+
+        while (have < want) {                           // дочитываем из сокета
+            int n = recv(client_fd, &bodyBuf[have], want - have, 0);
+            if (n <= 0) break;
+            have += n;
+        }
+        req.body = bodyBuf;
+    }
+
+
     return req;
 }
 
@@ -56,7 +79,7 @@ std::string HTTPResponse::serialize() const {
 }
 
 // Конструктор HTTPServer
-HTTPServer::HTTPServer(const int port, unsigned int interface)
+HTTPServer::HTTPServer(const int port, const unsigned int interface)
     : server_socket(AF_INET, SOCK_STREAM, 0, port, interface)
 {
     server_socket.establish_connection();
@@ -93,8 +116,32 @@ void HTTPServer::listen(int backlog) {
 
         // Отправка ответа
         std::string out = responce.serialize();
+
+        printResponce(out);
+        std::cout << "method: " << request.method << std::endl << "==========="<< std::endl;
+
         send(client_fd, out.c_str(), out.size(), 0);
         close(client_fd);
+    }
+}
+
+void HTTPServer::printResponce(const std::string &out) const {
+    std::cout << "=== HTTP Response ===\n";
+    const std::string::size_type header_end = out.find("\r\n\r\n");
+    if (header_end != std::string::npos) {
+        std::string str = out.substr(0, header_end + 4);
+        std::string line;
+        std::string result;
+        std::istringstream stream(str);
+        while (std::getline(stream, line)) {
+            if (!line.empty()) {
+                result += line + "\n";
+            }
+        }
+        std::cout << result;
+    }
+    else {
+        std::cout << out;
     }
 }
 
@@ -108,7 +155,6 @@ void HTTPServer::addRoute(const std::string& method, const std::string& path, Ha
     routes[{method,path}] = std::move(handler);
 }
 
-
 void HTTPServer::addStaticRoute(const std::string& uri, const std::string& filePath, const std::string& contentType) {
     addRoute("GET", uri,
         /*lambda handler:*/ [filePath, contentType](const HTTPRequest&){
@@ -117,4 +163,30 @@ void HTTPServer::addStaticRoute(const std::string& uri, const std::string& fileP
             res.body = loadFile(filePath);
             return res;
         });
+}
+
+void HTTPServer::addPostRoute(const std::string& path, Handler h) {
+    addRoute("POST", path, std::move(h));
+}
+
+void HTTPServer::addStaticPostRoute() {
+    addPostRoute("/echo", [](const HTTPRequest& req) {
+        HTTPResponse res;
+        res.headers["Content-Type"] = "text/plain";
+        res.body = req.body;
+        return res;
+    });
+}
+
+void HTTPServer::addPullRoute(const std::string& path, Handler h) {
+    addRoute("PULL", path, std::move(h));
+}
+
+void HTTPServer::addStaticPullRoute() {
+    addPullRoute("/api/info", [](const HTTPRequest&) {
+        HTTPResponse res;
+        res.headers["Content-Type"] = "application/json";
+        res.body = R"({"ok":true})";
+        return res;
+    });
 }

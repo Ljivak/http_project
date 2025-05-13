@@ -56,16 +56,13 @@ dodałem HTTPServer z
     close(client_fd) закрывает соединение
 
 
-W poprzednim commicie miałem zwykłą strukturę socket, która implementowała socket,
-a w pliku main.cpp bezpośrednio wykonywałem operacje takie jak bind, accept connection itd.
-Teraz dodałem plik serwera HTTP, który używa niskopoziomowo socket.cpp i funkcji socketów.
-Dzięki temu mogę dodawać takie żądania jak GET, POST, PUT, zmieniać je, a serwer automatycznie będzie
-je parsował i wykonywał.
 
-HTTPServer już potrafi:
-	•	przyjmować zapytania
-	•	analizować je
-	•	wyszukiwać odpowiedni handler do metody
-	•	tworzyć i wysyłać odpowiedź
-wszystko to odbywa się za pomocą funkcji zapisanych w HTTPServer,
-które wykorzystują metody z socket, zamiast ręcznego wpisywania funkcji i algorytmów w main.
+curl -i -X POST \
+     -H "Host: localhost:8080" \
+     -H "Content-Type: application/x-www-form-urlencoded" \
+     -d "name=DimaMalynyak&password=12345" \
+     http://localhost:8080/echo
+
+
+
+curl -i -X PULL http://localhost:8080/api/info
