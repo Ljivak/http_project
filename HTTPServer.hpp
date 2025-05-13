@@ -42,9 +42,11 @@ class HTTPServer {
 
         void addStaticPostRoute();
 
-        void addPullRoute (const std::string& path, Handler h);
+        void addPutRoute (const std::string& path, Handler h);
 
-        void addStaticPullRoute();
+        void addStaticPutRoute();
+
+        void addEchoRoutes();
 
         static std::string loadFile(const std::string& path);
 

@@ -8,7 +8,8 @@ int main() {
     server.addStaticRoute("/", "index.html");
 
     server.addStaticPostRoute();
-    server.addStaticPullRoute();
+    server.addStaticPutRoute();
+    // server.addEchoRoutes();
 
     server.listen();
     return 0;

@@ -65,4 +65,6 @@ curl -i -X POST \
 
 
 
-curl -i -X PULL http://localhost:8080/api/info
+curl -i -X PUT http://localhost:8080/echo -d "foo"
+
+curl http://localhost:8080/echo

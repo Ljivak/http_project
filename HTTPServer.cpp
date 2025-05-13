@@ -178,15 +178,32 @@ void HTTPServer::addStaticPostRoute() {
     });
 }
 
-void HTTPServer::addPullRoute(const std::string& path, Handler h) {
-    addRoute("PULL", path, std::move(h));
+void HTTPServer::addPutRoute(const std::string& path, Handler h) {
+    addRoute("PUT", path, std::move(h));
 }
 
-void HTTPServer::addStaticPullRoute() {
-    addPullRoute("/api/info", [](const HTTPRequest&) {
+void HTTPServer::addStaticPutRoute() {
+    addPutRoute("/echo", [](const HTTPRequest& req) {
         HTTPResponse res;
-        res.headers["Content-Type"] = "application/json";
-        res.body = R"({"ok":true})";
+        res.headers["Content-Type"] = "text/plain";
+        res.body = "updated:" + req.body;
         return res;
     });
 }
+
+// void HTTPServer::addEchoRoutes() {
+//         std::string resourceBody;
+//     addPostRoute("/echo", [this, resourceBody](auto& req){
+//         resourceBody = req.body;
+//         HTTPResponse r; r.headers["Content-Type"]="text/plain"; r.body=resourceBody; return r;
+//     });
+
+//     addPutRoute("/echo", [this, resourceBody](auto& req){
+//         resourceBody = "[updated] "+req.body;
+//         HTTPResponse r; r.headers["Content-Type"]="text/plain"; r.body=resourceBody; return r;
+//     });
+
+//     addRoute("GET","/echo",[this](auto&){
+//         HTTPResponse r; r.headers["Content-Type"]="text/plain"; r.body=resourceBody; return r;
+//     });
+// }
